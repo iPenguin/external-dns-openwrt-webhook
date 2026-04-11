@@ -114,5 +114,154 @@ var _ = Describe("Provider Suite", func() {
 				Expect(endpoints[index].RecordType).To(Equal(record.Type))
 			}
 		})
+
+		It("AAAA endpoint to dns record", func() {
+			endpoints := []*endpoint.Endpoint{
+				{
+					DNSName:    "ipv6.foobar.com",
+					RecordTTL:  defaultTTL,
+					RecordType: "AAAA",
+					Targets:    []string{"2001:db8::1"},
+				},
+			}
+			dnsRecords := endpoints2DNSRecords(endpoints)
+			Expect(dnsRecords).To(HaveLen(1))
+			Expect(dnsRecords[0].Type).To(Equal("AAAA"))
+			Expect(dnsRecords[0].Name).To(Equal("ipv6.foobar.com"))
+			Expect(dnsRecords[0].IP).To(Equal("2001:db8::1"))
+		})
+
+		It("AAAA dns record to endpoint", func() {
+			dnsRecords := map[string]openwrt.DNSRecord{
+				"x": {Type: "AAAA", Name: "ipv6.foobar.com", IP: "2001:db8::1"},
+			}
+			endpoints := dnsRecords2Endpoints(dnsRecords)
+			Expect(endpoints).To(HaveLen(1))
+			Expect(endpoints[0].RecordType).To(Equal("AAAA"))
+			Expect(endpoints[0].DNSName).To(Equal("ipv6.foobar.com"))
+			Expect(endpoints[0].Targets[0]).To(Equal("2001:db8::1"))
+		})
+
+		It("MX endpoint to dns record", func() {
+			endpoints := []*endpoint.Endpoint{
+				{
+					DNSName:    "example.com",
+					RecordTTL:  defaultTTL,
+					RecordType: "MX",
+					Targets:    []string{"mail.example.com"},
+					Labels:     map[string]string{"mx-priority": "10"},
+				},
+			}
+			dnsRecords := endpoints2DNSRecords(endpoints)
+			Expect(dnsRecords).To(HaveLen(1))
+			Expect(dnsRecords[0].Type).To(Equal("MX"))
+			Expect(dnsRecords[0].Hostname).To(Equal("example.com"))
+			Expect(dnsRecords[0].MX).To(Equal("mail.example.com"))
+			Expect(dnsRecords[0].Priority).To(Equal("10"))
+		})
+
+		It("MX dns record to endpoint", func() {
+			dnsRecords := map[string]openwrt.DNSRecord{
+				"x": {Type: "MX", Hostname: "example.com", MX: "mail.example.com", Priority: "10"},
+			}
+			endpoints := dnsRecords2Endpoints(dnsRecords)
+			Expect(endpoints).To(HaveLen(1))
+			Expect(endpoints[0].RecordType).To(Equal("MX"))
+			Expect(endpoints[0].DNSName).To(Equal("example.com"))
+			Expect(endpoints[0].Targets[0]).To(Equal("mail.example.com"))
+			Expect(endpoints[0].Labels["mx-priority"]).To(Equal("10"))
+		})
+
+		It("SRV endpoint to dns record", func() {
+			endpoints := []*endpoint.Endpoint{
+				{
+					DNSName:    "_http._tcp.example.com",
+					RecordTTL:  defaultTTL,
+					RecordType: "SRV",
+					Targets:    []string{"www.example.com"},
+					Labels: map[string]string{
+						"srv-priority": "10",
+						"srv-weight":   "20",
+						"srv-port":     "80",
+					},
+				},
+			}
+			dnsRecords := endpoints2DNSRecords(endpoints)
+			Expect(dnsRecords).To(HaveLen(1))
+			Expect(dnsRecords[0].Type).To(Equal("SRV"))
+			Expect(dnsRecords[0].SRV).To(Equal("_http._tcp.example.com"))
+			Expect(dnsRecords[0].Target).To(Equal("www.example.com"))
+			Expect(dnsRecords[0].Port).To(Equal("80"))
+			Expect(dnsRecords[0].Priority).To(Equal("10"))
+			Expect(dnsRecords[0].Weight).To(Equal("20"))
+		})
+
+		It("SRV dns record to endpoint", func() {
+			dnsRecords := map[string]openwrt.DNSRecord{
+				"x": {Type: "SRV", SRV: "_http._tcp.example.com", Target: "www.example.com", Port: "80", Priority: "10", Weight: "20"},
+			}
+			endpoints := dnsRecords2Endpoints(dnsRecords)
+			Expect(endpoints).To(HaveLen(1))
+			Expect(endpoints[0].RecordType).To(Equal("SRV"))
+			Expect(endpoints[0].DNSName).To(Equal("_http._tcp.example.com"))
+			Expect(endpoints[0].Targets[0]).To(Equal("www.example.com"))
+			Expect(endpoints[0].Labels["srv-port"]).To(Equal("80"))
+			Expect(endpoints[0].Labels["srv-priority"]).To(Equal("10"))
+			Expect(endpoints[0].Labels["srv-weight"]).To(Equal("20"))
+		})
+
+		It("TXT endpoint to dns record", func() {
+			endpoints := []*endpoint.Endpoint{
+				{
+					DNSName:    "example.com",
+					RecordTTL:  defaultTTL,
+					RecordType: "TXT",
+					Targets:    []string{"v=spf1 -all"},
+				},
+			}
+			dnsRecords := endpoints2DNSRecords(endpoints)
+			Expect(dnsRecords).To(HaveLen(1))
+			Expect(dnsRecords[0].Type).To(Equal("TXT"))
+			Expect(dnsRecords[0].Name).To(Equal("example.com"))
+			Expect(dnsRecords[0].Value).To(Equal("v=spf1 -all"))
+		})
+
+		It("TXT dns record to endpoint", func() {
+			dnsRecords := map[string]openwrt.DNSRecord{
+				"x": {Type: "TXT", Name: "example.com", Value: "v=spf1 -all"},
+			}
+			endpoints := dnsRecords2Endpoints(dnsRecords)
+			Expect(endpoints).To(HaveLen(1))
+			Expect(endpoints[0].RecordType).To(Equal("TXT"))
+			Expect(endpoints[0].DNSName).To(Equal("example.com"))
+			Expect(endpoints[0].Targets[0]).To(Equal("v=spf1 -all"))
+		})
+
+		It("NS endpoint to dns record", func() {
+			endpoints := []*endpoint.Endpoint{
+				{
+					DNSName:    "example.com",
+					RecordTTL:  defaultTTL,
+					RecordType: "NS",
+					Targets:    []string{"ns1.example.com"},
+				},
+			}
+			dnsRecords := endpoints2DNSRecords(endpoints)
+			Expect(dnsRecords).To(HaveLen(1))
+			Expect(dnsRecords[0].Type).To(Equal("NS"))
+			Expect(dnsRecords[0].Name).To(Equal("example.com"))
+			Expect(dnsRecords[0].Target).To(Equal("ns1.example.com"))
+		})
+
+		It("NS dns record to endpoint", func() {
+			dnsRecords := map[string]openwrt.DNSRecord{
+				"x": {Type: "NS", Name: "example.com", Target: "ns1.example.com"},
+			}
+			endpoints := dnsRecords2Endpoints(dnsRecords)
+			Expect(endpoints).To(HaveLen(1))
+			Expect(endpoints[0].RecordType).To(Equal("NS"))
+			Expect(endpoints[0].DNSName).To(Equal("example.com"))
+			Expect(endpoints[0].Targets[0]).To(Equal("ns1.example.com"))
+		})
 	})
 })

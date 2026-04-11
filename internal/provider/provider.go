@@ -76,9 +76,35 @@ func dnsRecords2Endpoints(dnsRecords map[string]openwrt.DNSRecord) []*endpoint.E
 			ep.RecordType = endpoint.RecordTypeA
 			ep.DNSName = dnsRecord.Name
 			ep.Targets = endpoint.Targets{dnsRecord.IP}
+		case "AAAA":
+			ep.RecordType = endpoint.RecordTypeAAAA
+			ep.DNSName = dnsRecord.Name
+			ep.Targets = endpoint.Targets{dnsRecord.IP}
 		case "CNAME":
 			ep.RecordType = endpoint.RecordTypeCNAME
 			ep.DNSName = dnsRecord.CName
+			ep.Targets = endpoint.Targets{dnsRecord.Target}
+		case "MX":
+			ep.RecordType = endpoint.RecordTypeMX
+			ep.DNSName = dnsRecord.Hostname
+			ep.Targets = endpoint.Targets{dnsRecord.MX}
+			ep.Labels = map[string]string{"mx-priority": dnsRecord.Priority}
+		case "SRV":
+			ep.RecordType = endpoint.RecordTypeSRV
+			ep.DNSName = dnsRecord.SRV
+			ep.Targets = endpoint.Targets{dnsRecord.Target}
+			ep.Labels = map[string]string{
+				"srv-priority": dnsRecord.Priority,
+				"srv-weight":   dnsRecord.Weight,
+				"srv-port":     dnsRecord.Port,
+			}
+		case "TXT":
+			ep.RecordType = endpoint.RecordTypeTXT
+			ep.DNSName = dnsRecord.Name
+			ep.Targets = endpoint.Targets{dnsRecord.Value}
+		case "NS":
+			ep.RecordType = endpoint.RecordTypeNS
+			ep.DNSName = dnsRecord.Name
 			ep.Targets = endpoint.Targets{dnsRecord.Target}
 		default:
 			continue
@@ -102,9 +128,49 @@ func endpoints2DNSRecords(endpoints []*endpoint.Endpoint) []openwrt.DNSRecord {
 			dnsRecord.Type = "A"
 			dnsRecord.Name = ep.DNSName
 			dnsRecord.IP = ep.Targets[0]
+		case endpoint.RecordTypeAAAA:
+			dnsRecord.Type = "AAAA"
+			dnsRecord.Name = ep.DNSName
+			dnsRecord.IP = ep.Targets[0]
 		case endpoint.RecordTypeCNAME:
 			dnsRecord.Type = "CNAME"
 			dnsRecord.CName = ep.DNSName
+			dnsRecord.Target = ep.Targets[0]
+		case endpoint.RecordTypeMX:
+			dnsRecord.Type = "MX"
+			dnsRecord.Hostname = ep.DNSName
+			dnsRecord.MX = ep.Targets[0]
+			dnsRecord.Priority = "10"
+			if ep.Labels != nil {
+				if p, ok := ep.Labels["mx-priority"]; ok {
+					dnsRecord.Priority = p
+				}
+			}
+		case endpoint.RecordTypeSRV:
+			dnsRecord.Type = "SRV"
+			dnsRecord.SRV = ep.DNSName
+			dnsRecord.Target = ep.Targets[0]
+			dnsRecord.Priority = "0"
+			dnsRecord.Weight = "0"
+			dnsRecord.Port = "0"
+			if ep.Labels != nil {
+				if p, ok := ep.Labels["srv-priority"]; ok {
+					dnsRecord.Priority = p
+				}
+				if w, ok := ep.Labels["srv-weight"]; ok {
+					dnsRecord.Weight = w
+				}
+				if po, ok := ep.Labels["srv-port"]; ok {
+					dnsRecord.Port = po
+				}
+			}
+		case endpoint.RecordTypeTXT:
+			dnsRecord.Type = "TXT"
+			dnsRecord.Name = ep.DNSName
+			dnsRecord.Value = ep.Targets[0]
+		case endpoint.RecordTypeNS:
+			dnsRecord.Type = "NS"
+			dnsRecord.Name = ep.DNSName
 			dnsRecord.Target = ep.Targets[0]
 		default:
 			continue
