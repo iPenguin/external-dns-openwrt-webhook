@@ -7,8 +7,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	mocks "github.com/renanqts/external-dns-openwrt-webhook/internal/mocks/lucirpc"
-	"github.com/renanqts/external-dns-openwrt-webhook/pkg/logger"
+	mocks "github.com/ipenguin/external-dns-openwrt-webhook/internal/mocks/lucirpc"
+	"github.com/ipenguin/external-dns-openwrt-webhook/pkg/logger"
 	"go.uber.org/mock/gomock"
 )
 

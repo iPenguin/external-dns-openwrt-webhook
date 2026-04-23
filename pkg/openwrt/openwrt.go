@@ -7,8 +7,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/renanqts/external-dns-openwrt-webhook/pkg/logger"
-	"github.com/renanqts/external-dns-openwrt-webhook/pkg/lucirpc"
+	"github.com/ipenguin/external-dns-openwrt-webhook/pkg/logger"
+	"github.com/ipenguin/external-dns-openwrt-webhook/pkg/lucirpc"
 	"go.uber.org/zap"
 )
 

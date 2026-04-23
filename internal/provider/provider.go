@@ -3,8 +3,8 @@ package provider
 import (
 	"context"
 
-	"github.com/renanqts/external-dns-openwrt-webhook/pkg/logger"
-	"github.com/renanqts/external-dns-openwrt-webhook/pkg/openwrt"
+	"github.com/ipenguin/external-dns-openwrt-webhook/pkg/logger"
+	"github.com/ipenguin/external-dns-openwrt-webhook/pkg/openwrt"
 	"go.uber.org/zap"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"

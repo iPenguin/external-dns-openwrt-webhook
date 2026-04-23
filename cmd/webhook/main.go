@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/renanqts/external-dns-openwrt-webhook/internal/provider"
-	"github.com/renanqts/external-dns-openwrt-webhook/pkg/config"
-	"github.com/renanqts/external-dns-openwrt-webhook/pkg/logger"
-	"github.com/renanqts/external-dns-openwrt-webhook/pkg/router"
-	"github.com/renanqts/external-dns-openwrt-webhook/pkg/webhook"
+	"github.com/ipenguin/external-dns-openwrt-webhook/internal/provider"
+	"github.com/ipenguin/external-dns-openwrt-webhook/pkg/config"
+	"github.com/ipenguin/external-dns-openwrt-webhook/pkg/logger"
+	"github.com/ipenguin/external-dns-openwrt-webhook/pkg/router"
+	"github.com/ipenguin/external-dns-openwrt-webhook/pkg/webhook"
 	"go.uber.org/zap"
 )
 

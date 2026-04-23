@@ -5,8 +5,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/renanqts/external-dns-openwrt-webhook/pkg/logger"
-	"github.com/renanqts/external-dns-openwrt-webhook/pkg/openwrt"
+	"github.com/ipenguin/external-dns-openwrt-webhook/pkg/logger"
+	"github.com/ipenguin/external-dns-openwrt-webhook/pkg/openwrt"
 	"sigs.k8s.io/external-dns/endpoint"
 )
 

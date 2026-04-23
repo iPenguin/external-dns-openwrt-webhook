@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/renanqts/external-dns-openwrt-webhook/pkg/logger"
+	"github.com/ipenguin/external-dns-openwrt-webhook/pkg/logger"
 	"go.uber.org/zap"
 )
 
