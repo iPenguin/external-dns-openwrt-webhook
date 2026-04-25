@@ -172,6 +172,54 @@ var _ = Describe("OpenWRT", func() {
 				Value: "v=spf1 include:example.com ~all",
 			}))
 		})
+
+		It("get NS records from dnsmasq with a single server (string form)", func() {
+			raw := `{"cfg01411c":{".type":"dnsmasq","server":"/example.com/ns1.example.com"}}`
+			mockLuciRPC.EXPECT().Uci(ctx, "get_all", []string{"dhcp"}).Return(raw, nil)
+			o := openWRT{lucirpc: mockLuciRPC}
+			resultDNS, err := o.GetDNSRecords(ctx)
+			Expect(err).To(BeNil())
+			Expect(resultDNS).To(Equal(map[string]DNSRecord{
+				"cfg01411c_ns_0": {
+					Type:   "NS",
+					Name:   "example.com",
+					Target: "ns1.example.com",
+					Server: StringList{"/example.com/ns1.example.com"},
+				},
+			}))
+		})
+
+		It("get NS records from dnsmasq with multiple servers (list form)", func() {
+			raw := `{"cfg01411c":{".type":"dnsmasq","server":["/example.com/ns1.example.com","8.8.8.8","/foo.bar/10.0.0.1"]}}`
+			mockLuciRPC.EXPECT().Uci(ctx, "get_all", []string{"dhcp"}).Return(raw, nil)
+			o := openWRT{lucirpc: mockLuciRPC}
+			resultDNS, err := o.GetDNSRecords(ctx)
+			Expect(err).To(BeNil())
+			Expect(resultDNS).To(HaveLen(2))
+			Expect(resultDNS).To(HaveKeyWithValue("cfg01411c_ns_0", DNSRecord{
+				Type:   "NS",
+				Name:   "example.com",
+				Target: "ns1.example.com",
+				Server: StringList{"/example.com/ns1.example.com"},
+			}))
+			Expect(resultDNS).To(HaveKeyWithValue("cfg01411c_ns_2", DNSRecord{
+				Type:   "NS",
+				Name:   "foo.bar",
+				Target: "10.0.0.1",
+				Server: StringList{"/foo.bar/10.0.0.1"},
+			}))
+		})
+
+		It("get records when dnsmasq has only plain forwarders", func() {
+			raw := `{"cfg01411c":{".type":"dnsmasq","server":["8.8.8.8","1.1.1.1"]},"x":{".type":"domain","name":"foo","ip":"1.2.3.4"}}`
+			mockLuciRPC.EXPECT().Uci(ctx, "get_all", []string{"dhcp"}).Return(raw, nil)
+			o := openWRT{lucirpc: mockLuciRPC}
+			resultDNS, err := o.GetDNSRecords(ctx)
+			Expect(err).To(BeNil())
+			Expect(resultDNS).To(Equal(map[string]DNSRecord{
+				"x": {Type: "A", Name: "foo", IP: "1.2.3.4"},
+			}))
+		})
 	})
 
 	Context("Set DNS", func() {

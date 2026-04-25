@@ -51,13 +51,13 @@ func (o *openWRT) GetDNSRecords(ctx context.Context) (map[string]DNSRecord, erro
 		return nil, err
 	}
 
-	var records map[string]DNSRecord
-	err = json.Unmarshal([]byte(result), &records)
-	if err != nil {
+	var raw map[string]DNSRecord
+	if err := json.Unmarshal([]byte(result), &raw); err != nil {
 		return nil, err
 	}
 
-	for key, record := range records {
+	records := make(map[string]DNSRecord, len(raw))
+	for key, record := range raw {
 		switch record.Type {
 		case "domain":
 			recType := "A"
@@ -98,24 +98,23 @@ func (o *openWRT) GetDNSRecords(ctx context.Context) (map[string]DNSRecord, erro
 				Value: record.Value,
 			}
 		case "dnsmasq":
-			// NS records are stored as server list entries in the dnsmasq section.
-			// Format: /domain/nameserver
-			if record.Server != "" {
-				parts := strings.SplitN(strings.Trim(record.Server, "/"), "/", 2)
-				if len(parts) == 2 {
-					records[key] = DNSRecord{
-						Type:   "NS",
-						Name:   parts[0],
-						Server: record.Server,
-						Target: parts[1],
-					}
+			// The dnsmasq section's `server` option is a UCI list. Each entry is either
+			// an NS override (/domain/nameserver) or a plain forwarder (e.g. 8.8.8.8).
+			// We surface only NS overrides; plain forwarders are ignored.
+			for i, entry := range record.Server {
+				parts := strings.SplitN(strings.Trim(entry, "/"), "/", 2)
+				if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
 					continue
 				}
+				records[fmt.Sprintf("%s_ns_%d", key, i)] = DNSRecord{
+					Type:   "NS",
+					Name:   parts[0],
+					Target: parts[1],
+					Server: StringList{entry},
+				}
 			}
-			delete(records, key)
 		default:
 			logger.Log.Debug("ignoring record", zap.String("type", record.Type))
-			delete(records, key)
 		}
 	}
 
@@ -460,7 +459,10 @@ func (o *openWRT) addNS(ctx context.Context, record DNSRecord) error {
 }
 
 func (o *openWRT) deleteNS(ctx context.Context, record DNSRecord) error {
-	serverEntry := record.Server
+	serverEntry := ""
+	if len(record.Server) > 0 {
+		serverEntry = record.Server[0]
+	}
 	if serverEntry == "" {
 		serverEntry = "/" + record.Name + "/" + record.Target
 	}
