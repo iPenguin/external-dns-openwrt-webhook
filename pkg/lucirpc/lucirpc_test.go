@@ -224,5 +224,35 @@ var _ = Describe("Luci RPC", func() {
 			Expect(authCalled).To(BeTrue())
 			Expect(client.token).To(Equal(expectedToken))
 		})
+
+		It("should fail when the call returns false", func() {
+			mux := http.NewServeMux()
+			ts := httptest.NewServer(mux)
+			defer ts.Close()
+			u, err := url.Parse(ts.URL)
+			Expect(err).To(BeNil())
+			port, err := strconv.Atoi(u.Port())
+			Expect(err).To(BeNil())
+
+			config := DefaultConfig()
+			config.Hostname = u.Hostname()
+			config.Port = port
+			config.SSL = false
+
+			client := lucirpc{
+				config:     config,
+				token:      "foobar",
+				httpClient: ts.Client(),
+			}
+
+			mux.HandleFunc(uciPath, func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				_, err := w.Write([]byte(`{"id":1,"result":false,"error":null}`))
+				Expect(err).To(BeNil())
+			})
+
+			_, err = client.Uci(ctx, "commit", []string{"dhcp"})
+			Expect(err).To(MatchError(ErrRpcFalse))
+		})
 	})
 })

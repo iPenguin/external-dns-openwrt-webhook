@@ -29,6 +29,9 @@ const (
 
 var (
 	ErrRpcLoginFail = errors.New("rpc: login fail")
+	// LuCI reports a failed uci call (e.g. ACL denied, commit failed) as
+	// result false, not as an error.
+	ErrRpcFalse = errors.New("rpc: call returned false")
 
 	ErrHttpUnauthenticated = errors.New("http: Unauthenticated")
 	ErrHttpUnauthorized    = errors.New("http: Unauthorized")
@@ -123,6 +126,10 @@ func (c *lucirpc) rpc(ctx context.Context, path, method string, params []string)
 
 	if response.Error != nil {
 		return "", parseError(response.Error)
+	}
+
+	if ok, isBool := response.Result.(bool); isBool && !ok {
+		return "", fmt.Errorf("%w: %s", ErrRpcFalse, method)
 	}
 
 	if response.Result != nil {

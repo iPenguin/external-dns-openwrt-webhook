@@ -253,6 +253,20 @@ func (o *openWRT) DeleteDNSRecords(ctx context.Context, deleteRecords []DNSRecor
 	return nil
 }
 
+// addSection adds an anonymous dhcp section. LuCI returns null, not an
+// error, when the add fails.
+func (o *openWRT) addSection(ctx context.Context, sectionType string) (string, error) {
+	cfg, err := o.lucirpc.Uci(ctx, "add", []string{"dhcp", sectionType})
+	if err != nil {
+		return "", err
+	}
+	if cfg == "" {
+		return "", fmt.Errorf("uci add %s returned no section", sectionType)
+	}
+
+	return cfg, nil
+}
+
 // addRecord dispatches to the correct add method based on record type.
 func (o *openWRT) addRecord(ctx context.Context, record DNSRecord) error {
 	switch record.Type {
@@ -286,7 +300,7 @@ func (o *openWRT) addA(ctx context.Context, record DNSRecord) error {
 		return fmt.Errorf("ip is required")
 	}
 
-	cfg, err := o.lucirpc.Uci(ctx, "add", []string{"dhcp", "domain"})
+	cfg, err := o.addSection(ctx, "domain")
 	if err != nil {
 		return err
 	}
@@ -315,7 +329,7 @@ func (o *openWRT) addCName(ctx context.Context, record DNSRecord) error {
 		return fmt.Errorf("target is required")
 	}
 
-	cfg, err := o.lucirpc.Uci(ctx, "add", []string{"dhcp", "cname"})
+	cfg, err := o.addSection(ctx, "cname")
 	if err != nil {
 		return err
 	}
@@ -345,7 +359,7 @@ func (o *openWRT) addMX(ctx context.Context, record DNSRecord) error {
 		priority = "10"
 	}
 
-	cfg, err := o.lucirpc.Uci(ctx, "add", []string{"dhcp", "mxhost"})
+	cfg, err := o.addSection(ctx, "mxhost")
 	if err != nil {
 		return err
 	}
@@ -388,7 +402,7 @@ func (o *openWRT) addSRV(ctx context.Context, record DNSRecord) error {
 		weight = "0"
 	}
 
-	cfg, err := o.lucirpc.Uci(ctx, "add", []string{"dhcp", "srvhost"})
+	cfg, err := o.addSection(ctx, "srvhost")
 	if err != nil {
 		return err
 	}
@@ -425,7 +439,7 @@ func (o *openWRT) addTXT(ctx context.Context, record DNSRecord) error {
 		return fmt.Errorf("value is required")
 	}
 
-	cfg, err := o.lucirpc.Uci(ctx, "add", []string{"dhcp", "txtrecord"})
+	cfg, err := o.addSection(ctx, "txtrecord")
 	if err != nil {
 		return err
 	}

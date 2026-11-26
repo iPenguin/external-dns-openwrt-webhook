@@ -3,6 +3,7 @@ package openwrt
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -261,6 +262,33 @@ var _ = Describe("OpenWRT", func() {
 				{Type: "AAAA", IP: ip, Name: name},
 			})
 			Expect(err).To(BeNil())
+		})
+
+		It("A fails when uci add returns no section", func() {
+			mockLuciRPC.EXPECT().Uci(ctx, "add", []string{"dhcp", "domain"}).Return("", nil)
+
+			o := openWRT{lucirpc: mockLuciRPC}
+			err := o.SetDNSRecords(ctx, []DNSRecord{
+				{Type: "A", IP: "1.1.1.1", Name: "foo.bar.com"},
+			})
+			Expect(err).To(MatchError(ContainSubstring("returned no section")))
+		})
+
+		It("A fails when commit fails", func() {
+			cfg := "foobar"
+			ip := "1.1.1.1"
+			name := "foo.bar.com"
+
+			mockLuciRPC.EXPECT().Uci(ctx, "add", []string{"dhcp", "domain"}).Return(cfg, nil)
+			mockLuciRPC.EXPECT().Uci(ctx, "set", []string{"dhcp", cfg, "name", name}).Return("", nil)
+			mockLuciRPC.EXPECT().Uci(ctx, "set", []string{"dhcp", cfg, "ip", ip}).Return("", nil)
+			mockLuciRPC.EXPECT().Uci(ctx, "commit", []string{"dhcp"}).Return("", errors.New("rpc: call returned false"))
+
+			o := openWRT{lucirpc: mockLuciRPC}
+			err := o.SetDNSRecords(ctx, []DNSRecord{
+				{Type: "A", IP: ip, Name: name},
+			})
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("A without name", func() {
